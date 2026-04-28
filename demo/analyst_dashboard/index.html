@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Wave — Fraud Analyst Dashboard</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f0f4f8;
+  color: #1e293b;
+}
+
+/* ── Layout ── */
+.sidebar {
+  width: 240px;
+  background: #1a56db;
+  min-height: 100vh;
+  position: fixed;
+  top: 0; left: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+.main {
+  margin-left: 240px;
+  padding: 28px;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar-header {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.15);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sidebar-logo { font-size: 20px; font-weight: 800; color: white; }
+.sidebar-sub  { font-size: 11px; color: rgba(255,255,255,0.65); margin-top: 2px; }
+.nav-section  { padding: 16px 12px 8px; font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.45); text-transform: uppercase; letter-spacing: 1px; }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 20px; cursor: pointer;
+  font-size: 13px; font-weight: 500; color: rgba(255,255,255,0.75);
+  transition: all 0.15s; border-left: 3px solid transparent;
+}
+.nav-item:hover  { background: rgba(255,255,255,0.1); color: white; }
+.nav-item.active { background: rgba(255,255,255,0.15); color: white; border-left-color: white; }
+.nav-badge {
+  margin-left: auto; background: #ef4444;
+  color: white; font-size: 10px; font-weight: 700;
+  padding: 2px 7px; border-radius: 99px;
+}
+.sidebar-footer {
+  margin-top: auto; padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,0.15);
+  font-size: 12px; color: rgba(255,255,255,0.6);
+}
+
+/* ── Top bar ── */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 24px;
+}
+.page-title    { font-size: 22px; font-weight: 800; color: #1e293b; }
+.page-subtitle { font-size: 13px; color: #64748b; margin-top: 2px; }
+.topbar-right  { display: flex; align-items: center; gap: 12px; }
+.analyst-chip  {
+  display: flex; align-items: center; gap: 8px;
+  background: white; border-radius: 99px;
+  padding: 6px 14px 6px 6px;
+  border: 1px solid #e2e8f0;
+  font-size: 13px; font-weight: 600; color: #1e293b;
+}
+.analyst-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #1a56db; color: white;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700;
+}
+
+/* ── Stat cards ── */
+.stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: white; border-radius: 14px;
+  padding: 18px 20px; border: 1px solid #e8ecf0;
+}
+.stat-label  { font-size: 12px; color: #94a3b8; font-weight: 500; margin-bottom: 6px; }
+.stat-value  { font-size: 26px; font-weight: 800; color: #1e293b; }
+.stat-sub    { font-size: 11px; color: #94a3b8; margin-top: 4px; }
+.stat-dot    { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+
+/* ── Filters bar ── */
+.filters-bar {
+  display: flex; align-items: center; gap: 12px;
+  background: white; border-radius: 12px;
+  padding: 12px 16px; border: 1px solid #e8ecf0;
+  margin-bottom: 16px;
+}
+.search-wrap { position: relative; flex: 1; }
+.search-input {
+  width: 100%; padding: 8px 12px 8px 34px;
+  border: 1.5px solid #e2e8f0; border-radius: 8px;
+  font-size: 13px; color: #1e293b; outline: none;
+  transition: border-color 0.15s;
+}
+.search-input:focus { border-color: #1a56db; }
+.search-icon {
+  position: absolute; left: 10px; top: 50%;
+  transform: translateY(-50%); color: #94a3b8;
+}
+.filter-select {
+  padding: 8px 12px; border: 1.5px solid #e2e8f0;
+  border-radius: 8px; font-size: 13px; color: #1e293b;
+  background: white; outline: none; cursor: pointer;
+}
+
+/* ── Table ── */
+.table-card {
+  background: white; border-radius: 14px;
+  border: 1px solid #e8ecf0; overflow: hidden;
+}
+.table-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid #f1f5f9;
+}
+.table-title { font-size: 15px; font-weight: 700; color: #1e293b; }
+.table-count { font-size: 12px; color: #94a3b8; }
+table { width: 100%; border-collapse: collapse; }
+thead th {
+  padding: 11px 16px; text-align: left;
+  font-size: 11px; font-weight: 700; color: #94a3b8;
+  text-transform: uppercase; letter-spacing: 0.6px;
+  background: #f8fafc; border-bottom: 1px solid #f1f5f9;
+}
+tbody tr { border-bottom: 1px solid #f8fafc; transition: background 0.1s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: #fafbff; }
+tbody td { padding: 13px 16px; font-size: 13px; color: #1e293b; vertical-align: middle; }
+
+/* ── Badges ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 10px; border-radius: 99px;
+  font-size: 11px; font-weight: 700;
+}
+.badge-high     { background: #fee2e2; color: #991b1b; }
+.badge-low      { background: #dcfce7; color: #15803d; }
+.badge-confirmed { background: #fef3c7; color: #92400e; }
+.badge-dismissed { background: #f1f5f9; color: #64748b; }
+.badge-pending  { background: #ede9fe; color: #6d28d9; }
+
+/* ── Action buttons ── */
+.action-btn {
+  padding: 5px 12px; border-radius: 6px;
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  border: none; transition: all 0.15s;
+}
+.action-btn:active { transform: scale(0.97); }
+.btn-confirm  { background: #fee2e2; color: #991b1b; }
+.btn-confirm:hover  { background: #fca5a5; }
+.btn-dismiss  { background: #f1f5f9; color: #475569; }
+.btn-dismiss:hover  { background: #e2e8f0; }
+.btn-view     { background: #dbeafe; color: #1d4ed8; }
+.btn-view:hover     { background: #bfdbfe; }
+
+/* ── Confidence bar ── */
+.mini-bar-wrap { width: 80px; background: #f1f5f9; border-radius: 99px; height: 5px; display: inline-block; vertical-align: middle; margin-left: 6px; }
+.mini-bar      { height: 5px; border-radius: 99px; }
+
+/* ── Modal ── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.4); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: white; border-radius: 16px;
+  padding: 28px; width: 460px; max-width: 90vw;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+.modal-title   { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+.modal-sub     { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+.modal-row     { display: flex; justify-content: space-between; padding: 9px 0; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+.modal-row:last-of-type { border-bottom: none; }
+.modal-key     { color: #94a3b8; font-weight: 500; }
+.modal-val     { font-weight: 600; color: #1e293b; text-align: right; }
+.modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+.modal-btn     { flex: 1; padding: 11px; border-radius: 10px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+.modal-btn:active { transform: scale(0.98); }
+.modal-btn-confirm  { background: #dc2626; color: white; }
+.modal-btn-dismiss  { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+.modal-btn-close    { background: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+/* ── Toast notification ── */
+.toast {
+  position: fixed; bottom: 28px; right: 28px;
+  background: #1e293b; color: white;
+  padding: 12px 20px; border-radius: 10px;
+  font-size: 13px; font-weight: 500;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+  transform: translateY(80px); opacity: 0;
+  transition: all 0.3s; z-index: 200;
+}
+.toast.show { transform: translateY(0); opacity: 1; }
+
+/* ── Empty state ── */
+.empty-state { text-align: center; padding: 48px 20px; color: #94a3b8; }
+.empty-state svg { margin-bottom: 12px; opacity: 0.4; }
+</style>
+
+<!--Sidebar-->
+</head>
+<body>
+
+<!-- ═══ SIDEBAR ═══ -->
+<div class="sidebar">
+  <div class="sidebar-header">
+    <svg viewBox="0 0 40 40" width="32" height="32">
+      <ellipse cx="20" cy="23" rx="13" ry="14" fill="white"/>
+      <ellipse cx="20" cy="21" rx="10" ry="12" fill="#0f172a"/>
+      <ellipse cx="20" cy="26" rx="6" ry="7" fill="white"/>
+      <circle cx="16.5" cy="17.5" r="2" fill="white"/><circle cx="23.5" cy="17.5" r="2" fill="white"/>
+      <circle cx="16.5" cy="17.5" r="1" fill="#0f172a"/><circle cx="23.5" cy="17.5" r="1" fill="#0f172a"/>
+      <ellipse cx="20" cy="30" rx="2.5" ry="1.2" fill="#f59e0b"/>
+      <ellipse cx="14" cy="33" rx="2.5" ry="1.2" fill="#f59e0b"/>
+      <ellipse cx="26" cy="33" rx="2.5" ry="1.2" fill="#f59e0b"/>
+    </svg>
+    <div>
+      <div class="sidebar-logo">Wave</div>
+      <div class="sidebar-sub">Fraud Analyst Portal</div>
+    </div>
+  </div>
+
+  <div class="nav-section">Main</div>
+  <div class="nav-item active">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    Flagged Accounts
+    <span class="nav-badge" id="nav-badge">0</span>
+  </div>
+  <div class="nav-item">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    Activity Log
+  </div>
+
+  <div class="nav-section">Reports</div>
+  <div class="nav-item">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><bar x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Analytics
+  </div>
+  <div class="nav-item">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    Export Reports
+  </div>
+
+  <div class="sidebar-footer">
+    Logged in as <strong style="color:white;">Analyst · AJ</strong><br/>
+    <span style="font-size:10px;">Wave Fraud Detection v1.0</span>
+  </div>
+</div>
+
+<!--Main Content: Topbar & Stats Cards-->
+<!-- ═══ MAIN CONTENT ═══ -->
+<div class="main">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div>
+      <div class="page-title">Fraud Analyst Dashboard</div>
+      <div class="page-subtitle" id="last-updated">Loading registry data...</div>
+    </div>
+    <div class="topbar-right">
+      <div class="analyst-chip">
+        <div class="analyst-avatar">AJ</div>
+        Analyst Joan
+      </div>
+    </div>
+  </div>
+
+  <!-- Stats cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-label">Total Accounts</div>
+      <div class="stat-value" id="stat-total">—</div>
+      <div class="stat-sub">In fraud registry</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">High Risk</div>
+      <div class="stat-value" style="color:#dc2626;" id="stat-high">—</div>
+      <div class="stat-sub" id="stat-high-pct">—% of registry</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Low Risk</div>
+      <div class="stat-value" style="color:#16a34a;" id="stat-low">—</div>
+      <div class="stat-sub">Cleared accounts</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Total Amount at Risk</div>
+      <div class="stat-value" style="font-size:18px;" id="stat-amount">—</div>
+      <div class="stat-sub">CFA Francs (HIGH RISK only)</div>
+    </div>
+  </div>
+
+  <!--Filters Bar and Table-->
+
+  <!-- Filters -->
+  <div class="filters-bar">
+    <div class="search-wrap">
+      <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="search-input" type="text" id="search-input" placeholder="Search by phone number..." oninput="filterTable()"/>
+    </div>
+    <select class="filter-select" id="filter-status" onchange="filterTable()">
+      <option value="all">All statuses</option>
+      <option value="HIGH_RISK">High Risk only</option>
+      <option value="LOW_RISK">Low Risk only</option>
+    </select>
+    <select class="filter-select" id="filter-action" onchange="filterTable()">
+      <option value="all">All actions</option>
+      <option value="pending">Pending review</option>
+      <option value="confirmed">Confirmed</option>
+      <option value="dismissed">Dismissed</option>
+    </select>
+    <select class="filter-select" id="filter-sort" onchange="filterTable()">
+      <option value="confidence_desc">Confidence ↓</option>
+      <option value="confidence_asc">Confidence ↑</option>
+      <option value="amount_desc">Amount ↓</option>
+      <option value="victims_desc">Victims ↓</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="table-title">Flagged Accounts Registry</div>
+      <div class="table-count" id="table-count">Loading...</div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Phone Number</th>
+          <th>Risk Status</th>
+          <th>Confidence</th>
+          <th>Victims</th>
+          <th>Total Amount (CFA)</th>
+          <th>Devices</th>
+          <th>Review Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="table-body">
+        <tr>
+          <td colspan="8" style="text-align:center; padding:40px; color:#94a3b8;">
+            <div class="spinner" style="width:32px;height:32px;border-width:2px;margin:0 auto 10px;"></div>
+            Loading registry data...
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div><!-- end .main -->
+
+<!--Modal & Toast-->
+
+<!-- ═══ ACCOUNT DETAIL MODAL ═══ -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Account Details</div>
+    <div class="modal-sub"  id="modal-sub">Full fraud profile</div>
+
+    <div class="modal-row"><span class="modal-key">Phone number</span>    <span class="modal-val" id="m-phone">—</span></div>
+    <div class="modal-row"><span class="modal-key">Risk status</span>     <span class="modal-val" id="m-status">—</span></div>
+    <div class="modal-row"><span class="modal-key">Model confidence</span><span class="modal-val" id="m-conf">—</span></div>
+    <div class="modal-row"><span class="modal-key">Unique victims</span>  <span class="modal-val" id="m-victims">—</span></div>
+    <div class="modal-row"><span class="modal-key">Total stolen</span>    <span class="modal-val" id="m-amount">—</span></div>
+    <div class="modal-row"><span class="modal-key">Devices used</span>    <span class="modal-val" id="m-devices">—</span></div>
+    <div class="modal-row"><span class="modal-key">Review status</span>   <span class="modal-val" id="m-review">—</span></div>
+    <div class="modal-row"><span class="modal-key">Flag reason</span>     <span class="modal-val" id="m-reason" style="max-width:240px; text-align:right; line-height:1.5;">—</span></div>
+
+    <div class="modal-actions" id="modal-actions"></div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast" id="toast"></div>
+
+<!--Java Script-->
+<script>
+var API_BASE = 'http://localhost:5000';
+
+// ── Registry data loaded from API ─────────────────────────────────────────
+var allAccounts   = [];   // full list from API
+var reviewStatus  = {};   // tracks analyst decisions: { phone: 'pending'|'confirmed'|'dismissed' }
+var currentModal  = null; // phone number currently open in modal
+
+// ── Load data on page start ───────────────────────────────────────────────
+window.addEventListener('load', function() {
+  loadStats();
+  loadRegistry();
+});
+
+// ── Load summary stats into the cards ────────────────────────────────────
+function loadStats() {
+  fetch(API_BASE + '/api/v1/stats')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      document.getElementById('stat-total').textContent  = data.total_accounts.toLocaleString();
+      document.getElementById('stat-high').textContent   = data.high_risk_accounts.toLocaleString();
+      document.getElementById('stat-low').textContent    = data.low_risk_accounts.toLocaleString();
+      document.getElementById('stat-high-pct').textContent = data.high_risk_percentage + '% of registry';
+      document.getElementById('stat-amount').textContent =
+        'CFA ' + data.total_amount_at_risk.toLocaleString();
+      document.getElementById('last-updated').textContent =
+        'Last updated: ' + new Date().toLocaleString('en-GB', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    })
+    .catch(function() {
+      document.getElementById('last-updated').textContent = '⚠ Could not connect to API — check that risk_status_api.py is running';
+    });
+}
+
+// ── Load registry accounts into the table ────────────────────────────────
+function loadRegistry() {
+  // We fetch the HIGH RISK accounts directly from the API stats
+  // then build rows from the known registry numbers
+  // For a full list we call the health endpoint and build from known data
+  fetch(API_BASE + '/api/v1/health')
+    .then(function(r) { return r.json(); })
+    .then(function() {
+      // Load a sample of known HIGH and LOW risk accounts
+      var sampleNumbers = [
+        '221700028225','221701000643','221701072474','221701096918',
+        '221702021581','221702041616','221703131000','221703154382',
+        '221703155483','221703162877','221700083929','221701064176',
+        '221703607761','221703618972','221703715683','221704000123',
+        '221705112233','221706223344','221707334455','221708445566'
+      ];
+      // Fetch risk status for each account in parallel
+      var promises = sampleNumbers.map(function(num) {
+        return fetch(API_BASE + '/api/v1/risk-status/' + num)
+          .then(function(r) { return r.json(); })
+          .catch(function() { return null; });
+      });
+      return Promise.all(promises);
+    })
+    .then(function(results) {
+      // Filter out nulls and store
+      allAccounts = results.filter(function(r) { return r !== null; });
+      // Initialise all as pending review
+      allAccounts.forEach(function(acc) {
+        if (!reviewStatus[acc.phone_number]) {
+          reviewStatus[acc.phone_number] = 'pending';
+        }
+      });
+      renderTable(allAccounts);
+      updateNavBadge();
+    })
+    .catch(function() {
+      document.getElementById('table-body').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;padding:40px;color:#94a3b8;">⚠ Cannot connect to API. Make sure <strong>risk_status_api.py</strong> is running.</td></tr>';
+      document.getElementById('table-count').textContent = 'API offline';
+    });
+}
+
+// ── Render the table ──────────────────────────────────────────────────────
+function renderTable(accounts) {
+  var tbody  = document.getElementById('table-body');
+  var filter = document.getElementById('filter-status').value;
+  var action = document.getElementById('filter-action').value;
+  var search = document.getElementById('search-input').value.toLowerCase();
+  var sort   = document.getElementById('filter-sort').value;
+
+  // Apply filters
+  var filtered = accounts.filter(function(acc) {
+    var matchStatus = filter === 'all' || acc.status === filter;
+    var matchAction = action === 'all' || reviewStatus[acc.phone_number] === action;
+    var matchSearch = !search || acc.phone_number.includes(search);
+    return matchStatus && matchAction && matchSearch;
+  });
+
+  // Apply sort
+  filtered.sort(function(a, b) {
+    if (sort === 'confidence_desc') return b.confidence_score - a.confidence_score;
+    if (sort === 'confidence_asc')  return a.confidence_score - b.confidence_score;
+    if (sort === 'amount_desc')     return (b.account_stats.total_amount||0) - (a.account_stats.total_amount||0);
+    if (sort === 'victims_desc')    return (b.account_stats.victim_count||0) - (a.account_stats.victim_count||0);
+    return 0;
+  });
+
+  document.getElementById('table-count').textContent =
+    filtered.length + ' of ' + accounts.length + ' accounts';
+
+  if (filtered.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><div>No accounts match your filters</div></div></td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(function(acc) {
+    var review  = reviewStatus[acc.phone_number] || 'pending';
+    var pct     = Math.round(acc.confidence_score * 100);
+    var barColor = acc.status === 'HIGH_RISK' ? '#dc2626' : '#16a34a';
+    var stats   = acc.account_stats || {};
+
+    // Risk badge
+    var riskBadge = acc.status === 'HIGH_RISK'
+      ? '<span class="badge badge-high">⚠ HIGH RISK</span>'
+      : '<span class="badge badge-low">✓ LOW RISK</span>';
+
+    // Review badge
+    var reviewBadge = {
+      pending:   '<span class="badge badge-pending">Pending</span>',
+      confirmed: '<span class="badge badge-confirmed">Confirmed</span>',
+      dismissed: '<span class="badge badge-dismissed">Dismissed</span>',
+    }[review];
+
+    // Action buttons — hide confirm/dismiss if already actioned
+    var actions = '<button class="action-btn btn-view" onclick="openModal(\'' + acc.phone_number + '\')">View</button> ';
+    if (review === 'pending') {
+      actions += '<button class="action-btn btn-confirm" onclick="confirmFlag(\'' + acc.phone_number + '\')">Confirm</button> ';
+      actions += '<button class="action-btn btn-dismiss" onclick="dismissFlag(\'' + acc.phone_number + '\')">Dismiss</button>';
+    } else if (review === 'confirmed') {
+      actions += '<button class="action-btn btn-dismiss" onclick="dismissFlag(\'' + acc.phone_number + '\')">Dismiss</button>';
+    } else {
+      actions += '<button class="action-btn btn-confirm" onclick="confirmFlag(\'' + acc.phone_number + '\')">Re-confirm</button>';
+    }
+
+    return '<tr>' +
+      '<td style="font-family:monospace; font-weight:600;">+' + acc.phone_number + '</td>' +
+      '<td>' + riskBadge + '</td>' +
+      '<td>' +
+        '<span style="font-weight:700;">' + pct + '%</span>' +
+        '<span class="mini-bar-wrap"><span class="mini-bar" style="width:' + pct + '%; background:' + barColor + ';"></span></span>' +
+      '</td>' +
+      '<td style="font-weight:600;">' + (stats.victim_count || 0) + '</td>' +
+      '<td style="font-weight:600;">' + (stats.total_amount || 0).toLocaleString() + '</td>' +
+      '<td>' + (stats.device_count || 0) + '</td>' +
+      '<td>' + reviewBadge + '</td>' +
+      '<td>' + actions + '</td>' +
+    '</tr>';
+  }).join('');
+}
+
+// ── Filter & sort ────────────────────────────────────────────────────────
+function filterTable() { renderTable(allAccounts); }
+
+// ── Confirm a flag ────────────────────────────────────────────────────────
+// Analyst confirms this account IS fraudulent — it stays in the registry
+function confirmFlag(phone) {
+  reviewStatus[phone] = 'confirmed';
+  renderTable(allAccounts);
+  updateNavBadge();
+  showToast('✓ Flag confirmed for +' + phone);
+  if (currentModal === phone) updateModalActions(phone);
+}
+
+// ── Dismiss a flag ────────────────────────────────────────────────────────
+// Analyst dismisses — account is cleared from active monitoring
+function dismissFlag(phone) {
+  reviewStatus[phone] = 'dismissed';
+  renderTable(allAccounts);
+  updateNavBadge();
+  showToast('Flag dismissed for +' + phone);
+  if (currentModal === phone) updateModalActions(phone);
+}
+
+// ── Nav badge — shows count of pending HIGH RISK accounts ─────────────────
+function updateNavBadge() {
+  var pendingHigh = allAccounts.filter(function(acc) {
+    return acc.status === 'HIGH_RISK' && reviewStatus[acc.phone_number] === 'pending';
+  }).length;
+  var badge = document.getElementById('nav-badge');
+  badge.textContent = pendingHigh;
+  badge.style.display = pendingHigh > 0 ? 'inline-block' : 'none';
+}
+
+// ── Modal ─────────────────────────────────────────────────────────────────
+function openModal(phone) {
+  var acc = allAccounts.find(function(a) { return a.phone_number === phone; });
+  if (!acc) return;
+  currentModal = phone;
+
+  var stats   = acc.account_stats || {};
+  var review  = reviewStatus[phone] || 'pending';
+  var pct     = Math.round(acc.confidence_score * 100);
+
+  document.getElementById('modal-title').textContent = 'Account: +' + phone;
+  document.getElementById('modal-sub').textContent   =
+    acc.status === 'HIGH_RISK' ? '🔴 High Risk — Full fraud profile' : '🟢 Low Risk — Account details';
+  document.getElementById('m-phone').textContent   = '+' + phone;
+  document.getElementById('m-status').innerHTML    =
+    acc.status === 'HIGH_RISK'
+      ? '<span class="badge badge-high">HIGH RISK</span>'
+      : '<span class="badge badge-low">LOW RISK</span>';
+  document.getElementById('m-conf').textContent    = pct + '% confidence';
+  document.getElementById('m-victims').textContent = (stats.victim_count || 0) + ' unique victim(s)';
+  document.getElementById('m-amount').textContent  = 'CFA ' + (stats.total_amount || 0).toLocaleString();
+  document.getElementById('m-devices').textContent = (stats.device_count || 0) + ' device(s)';
+  document.getElementById('m-review').innerHTML    = {
+    pending:   '<span class="badge badge-pending">Pending review</span>',
+    confirmed: '<span class="badge badge-confirmed">Confirmed</span>',
+    dismissed: '<span class="badge badge-dismissed">Dismissed</span>',
+  }[review];
+  document.getElementById('m-reason').textContent = acc.flag_reason || '—';
+
+  updateModalActions(phone);
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function updateModalActions(phone) {
+  var review  = reviewStatus[phone] || 'pending';
+  var actions = document.getElementById('modal-actions');
+  if (review === 'pending') {
+    actions.innerHTML =
+      '<button class="modal-btn modal-btn-confirm" onclick="confirmFlag(\'' + phone + '\')">Confirm Flag</button>' +
+      '<button class="modal-btn modal-btn-dismiss" onclick="dismissFlag(\'' + phone + '\')">Dismiss Flag</button>';
+  } else if (review === 'confirmed') {
+    actions.innerHTML =
+      '<button class="modal-btn modal-btn-dismiss" onclick="dismissFlag(\'' + phone + '\')">Dismiss Flag</button>' +
+      '<button class="modal-btn modal-btn-close"   onclick="closeModal()">Close</button>';
+  } else {
+    actions.innerHTML =
+      '<button class="modal-btn modal-btn-confirm" onclick="confirmFlag(\'' + phone + '\')">Re-confirm Flag</button>' +
+      '<button class="modal-btn modal-btn-close"   onclick="closeModal()">Close</button>';
+  }
+}
+
+function closeModal(event) {
+  // Close only if clicking the overlay background, not the modal itself
+  if (event && event.target !== document.getElementById('modal-overlay')) return;
+  document.getElementById('modal-overlay').classList.remove('open');
+  currentModal = null;
+}
+
+// ── Toast notification ────────────────────────────────────────────────────
+function showToast(message) {
+  var toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(function() { toast.classList.remove('show'); }, 3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+data/*.xlsx
+data/*.csv
+__pycache__/
+*.py[cod]
+.env
+venv/
+env/
+.venv/
+models/*.pkl
+.ipynb_checkpoints/
+.DS_Store
+*.swp
+models/*.pkl
+models/*.pkl

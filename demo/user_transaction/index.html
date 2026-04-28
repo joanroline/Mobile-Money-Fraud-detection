@@ -1,0 +1,776 @@
+<!-- Basic setup -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Wave — Mobile Money</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #e8edf2;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px 0;
+}
+
+/* Phone Container and Screen styles inside style */
+.phone {
+  width: 375px;
+  min-height: 700px;
+  background: #f0f4f8;
+  border-radius: 40px;
+  border: 3px solid #c8d0d8;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+.screen { display: none; flex-direction: column; min-height: 700px; }
+.screen.active { display: flex; }
+
+/* Header */
+.wave-header { background: #1a56db; padding: 20px 20px 16px; color: white; }
+.header-row { display: flex; align-items: center; gap: 10px; }
+.back-btn { background: none; border: none; color: rgba(255,255,255,0.85); font-size: 20px; cursor: pointer; padding: 0; }
+.screen-title { font-size: 16px; font-weight: 600; color: white; flex: 1; text-align: center; }
+.header-spacer { width: 24px; }
+
+/* Content */
+.content { flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 14px; background: #f8fafc; }
+.content-white { background: white; }
+
+
+/* form, Button and Card styles */
+/* Form elements */
+.field-label { font-size: 12px; color: #64748b; margin-bottom: 5px; font-weight: 500; }
+.input-field {
+  width: 100%; padding: 11px 14px;
+  border: 1.5px solid #e2e8f0; border-radius: 10px;
+  font-size: 14px; background: white; color: #1e293b;
+  outline: none; transition: border-color 0.15s;
+}
+.input-field:focus { border-color: #1a56db; }
+
+/* Buttons */
+.btn { width: 100%; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; }
+.btn:active { transform: scale(0.98); }
+.btn-primary { background: #1a56db; color: white; }
+.btn-primary:hover { background: #1648c0; }
+.btn-danger  { background: #dc2626; color: white; }
+.btn-ghost   { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
+
+/* Transaction summary card */
+.tx-card { background: white; border-radius: 12px; border: 1px solid #e8ecf0; overflow: hidden; }
+.tx-row { display: flex; justify-content: space-between; align-items: center; padding: 11px 14px; border-bottom: 1px solid #f1f5f9; }
+.tx-row:last-child { border-bottom: none; }
+.tx-label { font-size: 12px; color: #94a3b8; font-weight: 500; }
+.tx-value  { font-size: 13px; font-weight: 600; color: #1e293b; }
+
+/* Section label */
+.section-label { font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px; }
+
+/*Amount, PIN * Numpad Styles*/
+
+/* Amount display */
+.amount-display { text-align: center; padding: 20px 0 10px; }
+.amount-big { font-size: 42px; font-weight: 700; color: #1e293b; letter-spacing: -1px; }
+
+/* Numpad */
+.numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: #e2e8f0; border-radius: 14px; overflow: hidden; }
+.numpad-key { background: white; padding: 16px; text-align: center; font-size: 20px; font-weight: 500; cursor: pointer; color: #1e293b; transition: background 0.1s; }
+.numpad-key:active { background: #f1f5f9; }
+.numpad-key.del { font-size: 16px; color: #94a3b8; }
+
+/* PIN dots */
+.pin-dots { display: flex; justify-content: center; gap: 16px; margin: 20px 0 10px; }
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid #1a56db; background: white; transition: background 0.15s; }
+.pin-dot.filled { background: #1a56db; }
+
+/* Spinner */
+.spinner { width: 44px; height: 44px; border: 3px solid #dbeafe; border-top-color: #1a56db; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 16px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Risk boxes */
+.risk-box { border-radius: 14px; padding: 20px; text-align: center; }
+.risk-box.high { background: #fef2f2; border: 1.5px solid #fca5a5; }
+.risk-box.low  { background: #f0fdf4; border: 1.5px solid #86efac; }
+.risk-icon-wrap { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px; }
+.risk-icon-wrap.high { background: #fee2e2; }
+.risk-icon-wrap.low  { background: #dcfce7; }
+.risk-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+.risk-title.high { color: #991b1b; }
+.risk-title.low  { color: #15803d; }
+.risk-desc  { font-size: 12px; color: #64748b; line-height: 1.6; }
+.risk-badge { display: inline-block; padding: 4px 12px; border-radius: 99px; font-size: 11px; font-weight: 700; margin-top: 10px; }
+.risk-badge.high { background: #fca5a5; color: #7f1d1d; }
+.risk-badge.low  { background: #86efac; color: #14532d; }
+.conf-bar-wrap { background: #e2e8f0; border-radius: 99px; height: 6px; margin-top: 8px; overflow: hidden; }
+.conf-bar { height: 6px; border-radius: 99px; }
+
+/* Contact rows */
+.contact-row { display: flex; align-items: center; gap: 12px; background: white; border-radius: 12px; padding: 13px; border: 1px solid #e8ecf0; cursor: pointer; transition: all 0.15s; }
+.contact-row:hover { background: #f0f7ff; border-color: #bfdbfe; }
+.avatar { width: 42px; height: 42px; border-radius: 50%; background: #dbeafe; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #1e40af; flex-shrink: 0; }
+
+/* Menu grid */
+.menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.menu-item { background: white; border-radius: 14px; padding: 16px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; border: 1px solid #e8ecf0; transition: all 0.15s; }
+.menu-item:hover { background: #f0f7ff; }
+.menu-item:active { transform: scale(0.97); }
+.menu-icon { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.menu-icon.blue   { background: #dbeafe; }
+.menu-icon.green  { background: #dcfce7; }
+.menu-icon.amber  { background: #fef3c7; }
+.menu-icon.red    { background: #fee2e2; }
+.menu-label { font-size: 12px; color: #374151; font-weight: 600; text-align: center; }
+
+/* Recent transactions */
+.txn-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: white; border-radius: 12px; border: 1px solid #e8ecf0; }
+.txn-info { display: flex; align-items: center; gap: 10px; }
+.txn-avatar { width: 36px; height: 36px; border-radius: 50%; background: #dbeafe; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 700; color: #1e40af; }
+.txn-amt-neg { font-size: 13px; font-weight: 700; color: #dc2626; }
+.txn-amt-pos { font-size: 13px; font-weight: 700; color: #16a34a; }
+
+/* Success */
+.success-circle { width: 72px; height: 72px; border-radius: 50%; background: #dcfce7; display: flex; align-items: center; justify-content: center; margin: 24px auto 16px; }
+.balance-card { background: rgba(255,255,255,0.15); border-radius: 14px; padding: 16px; margin-top: 14px; }
+</style>
+</head>
+
+<!--Phone Wrapper + Login Screen-->
+<body>
+</head>
+<body>
+<div class="phone">
+
+<!-- ═══ SCREEN 1: LOGIN ═══ -->
+<div id="s-login" class="screen active">
+  <div style="flex:1; background:#1a56db; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 28px 32px;">
+
+    <!-- Wave Penguin Logo (drawn in SVG — no image file needed) -->
+    <svg viewBox="0 0 80 80" width="80" height="80" style="margin-bottom:16px;">
+      <ellipse cx="40" cy="46" rx="26" ry="28" fill="white"/>
+      <ellipse cx="40" cy="42" rx="20" ry="24" fill="#0f172a"/>
+      <ellipse cx="40" cy="50" rx="12" ry="14" fill="white"/>
+      <circle cx="33" cy="36" r="3.5" fill="white"/>
+      <circle cx="47" cy="36" r="3.5" fill="white"/>
+      <circle cx="33" cy="36" r="1.8" fill="#0f172a"/>
+      <circle cx="47" cy="36" r="1.8" fill="#0f172a"/>
+      <ellipse cx="40" cy="58" rx="5" ry="2.5" fill="#f59e0b"/>
+      <ellipse cx="20" cy="52" rx="6" ry="2.5" fill="#0f172a" transform="rotate(-25 20 52)"/>
+      <ellipse cx="60" cy="52" rx="6" ry="2.5" fill="#0f172a" transform="rotate(25 60 52)"/>
+      <ellipse cx="30" cy="70" rx="5" ry="2.5" fill="#f59e0b"/>
+      <ellipse cx="50" cy="70" rx="5" ry="2.5" fill="#f59e0b"/>
+    </svg>
+
+    <div style="font-size:32px; font-weight:800; color:white; letter-spacing:1px;">Wave</div>
+    <div style="font-size:14px; color:rgba(255,255,255,0.7); margin-top:4px;">Mobile Money · Sénégal</div>
+  </div>
+
+  <div style="background:white; padding:28px 24px; border-radius:28px 28px 0 0; margin-top:-24px; display:flex; flex-direction:column; gap:16px;">
+    <div style="font-size:20px; font-weight:700; color:#1e293b; text-align:center;">Welcome back</div>
+    <div>
+      <div class="field-label">Phone number</div>
+      <input class="input-field" type="text" value="+221 77 123 4567" readonly/>
+    </div>
+    <div>
+      <div class="field-label">Password</div>
+      <input class="input-field" type="password" value="password123" readonly/>
+    </div>
+    <button class="btn btn-primary" onclick="go('s-home')">Sign in</button>
+    <div style="font-size:12px; color:#94a3b8; text-align:center;">
+      Don't have an account? <span style="color:#1a56db; cursor:pointer; font-weight:600;">Register</span>
+    </div>
+  </div>
+</div>
+
+<!-- Home Screen-->
+
+<!-- ═══ SCREEN 2: HOME ═══ -->
+<div id="s-home" class="screen">
+  <div class="wave-header">
+    <div class="header-row">
+      <svg viewBox="0 0 40 40" width="30" height="30">
+        <ellipse cx="20" cy="23" rx="13" ry="14" fill="white"/>
+        <ellipse cx="20" cy="21" rx="10" ry="12" fill="#0f172a"/>
+        <ellipse cx="20" cy="26" rx="6" ry="7" fill="white"/>
+        <circle cx="16.5" cy="17.5" r="2" fill="white"/><circle cx="23.5" cy="17.5" r="2" fill="white"/>
+        <circle cx="16.5" cy="17.5" r="1" fill="#0f172a"/><circle cx="23.5" cy="17.5" r="1" fill="#0f172a"/>
+        <ellipse cx="20" cy="30" rx="2.5" ry="1.2" fill="#f59e0b"/>
+        <ellipse cx="14" cy="33" rx="2.5" ry="1.2" fill="#f59e0b"/>
+        <ellipse cx="26" cy="33" rx="2.5" ry="1.2" fill="#f59e0b"/>
+      </svg>
+      <div style="margin-left:4px;">
+        <div style="font-size:18px; font-weight:800; color:white;">Wave</div>
+        <div style="font-size:11px; color:rgba(255,255,255,0.7);">Mobile Money</div>
+      </div>
+      <div style="margin-left:auto; width:36px; height:36px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; color:white;">AJ</div>
+    </div>
+    <div class="balance-card">
+      <div style="font-size:12px; color:rgba(255,255,255,0.75);">Available balance</div>
+      <div style="font-size:28px; font-weight:700; color:white; margin-top:2px;"><span style="font-size:16px; font-weight:400; opacity:0.8;">CFA </span>245,800</div>
+      <div style="font-size:11px; color:rgba(255,255,255,0.6); margin-top:3px;">+221 77 123 4567 · Atuheire Joan</div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="section-label">Quick actions</div>
+    <div class="menu-grid">
+      <div class="menu-item" onclick="go('s-contacts')">
+        <div class="menu-icon blue">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </div>
+        <div class="menu-label">Send money</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon green">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.5"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        </div>
+        <div class="menu-label">Withdraw money</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon amber">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#92400e" stroke-width="2.5"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+        </div>
+        <div class="menu-label">Pay bills</div>
+      </div>
+      <div class="menu-item">
+        <div class="menu-icon red">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#991b1b" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        <div class="menu-label">History</div>
+      </div>
+    </div>
+    <div class="section-label">Recent transactions</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div class="txn-row">
+        <div class="txn-info">
+          <div class="txn-avatar">FD</div>
+          <div><div style="font-size:13px; font-weight:600; color:#1e293b;">Fatou Diallo</div><div style="font-size:11px; color:#94a3b8;">Yesterday · 14:32</div></div>
+        </div>
+        <div class="txn-amt-neg">-CFA 25,000</div>
+      </div>
+      <div class="txn-row">
+        <div class="txn-info">
+          <div class="txn-avatar">MS</div>
+          <div><div style="font-size:13px; font-weight:600; color:#1e293b;">Moussa Sarr</div><div style="font-size:11px; color:#94a3b8;">Mon · 09:15</div></div>
+        </div>
+        <div class="txn-amt-pos">+CFA 50,000</div>
+      </div>
+      <div class="txn-row">
+        <div class="txn-info">
+          <div class="txn-avatar">OB</div>
+          <div><div style="font-size:13px; font-weight:600; color:#1e293b;">Orange Bill</div><div style="font-size:11px; color:#94a3b8;">Sun · 18:00</div></div>
+        </div>
+        <div class="txn-amt-neg">-CFA 5,000</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!--Contacts Screen-->
+
+<!-- ═══ SCREEN 3: CONTACTS ═══ -->
+<div id="s-contacts" class="screen">
+  <div class="wave-header">
+    <div class="header-row">
+      <button class="back-btn" onclick="go('s-home')">&#8592;</button>
+      <div class="screen-title">Send money</div>
+      <div class="header-spacer"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div>
+      <div class="field-label">Destination phone number</div>
+<input class="input-field" type="tel" id="manual-number" placeholder="+221 7X XXX XXXX" oninput="syncNumber(this.value)" onkeypress="return /[0-9+\s]/.test(event.key)"/>    </div>
+    <div class="section-label">Recent contacts</div>
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <!-- LOW RISK contact -->
+<div class="contact-row" onclick="selectContact('Fatou Diallo', '221700083929')">
+  <div class="avatar">FD</div>
+  <div>
+    <div style="font-size:14px; font-weight:600; color:#1e293b;">Fatou Diallo</div>
+    <div style="font-size:12px; color:#94a3b8;">+221 700 083 929</div>
+  </div>
+</div>
+<!-- HIGH RISK contact -->
+<div class="contact-row" onclick="selectContact('Moussa Sarr', '221700028225')">
+  <div class="avatar">MS</div>
+  <div>
+    <div style="font-size:14px; font-weight:600; color:#1e293b;">Moussa Sarr</div>
+    <div style="font-size:12px; color:#94a3b8;">+221 700 028 225</div>
+  </div>
+</div>
+<!-- LOW RISK contact -->
+<div class="contact-row" onclick="selectContact('Aminata Ba', '221701064176')">
+  <div class="avatar">AB</div>
+  <div>
+    <div style="font-size:14px; font-weight:600; color:#1e293b;">Aminata Ba</div>
+    <div style="font-size:12px; color:#94a3b8;">+221 701 064 176</div>
+  </div>
+</div>
+    </div>
+    <div style="margin-top:auto;">
+      <button class="btn btn-primary" onclick="proceedFromContacts()">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!--Amount Screen-->
+<!-- ═══ SCREEN 4: AMOUNT ═══ -->
+<div id="s-amount" class="screen">
+  <div class="wave-header">
+    <div class="header-row">
+      <button class="back-btn" onclick="go('s-contacts')">&#8592;</button>
+      <div class="screen-title">Enter amount</div>
+      <div class="header-spacer"></div>
+    </div>
+  </div>
+  <div class="content content-white">
+    <div style="background:#f8fafc; border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:12px; border:1px solid #e8ecf0;">
+      <div class="avatar" id="amt-avatar" style="width:38px; height:38px; font-size:13px;">FD</div>
+      <div>
+        <div style="font-size:13px; font-weight:600; color:#1e293b;" id="amt-name">Fatou Diallo</div>
+        <div style="font-size:12px; color:#94a3b8;" id="amt-num">+221 77 123 4001</div>
+      </div>
+    </div>
+    <div class="amount-display">
+  <div style="font-size:13px; color:#94a3b8; margin-bottom:6px;">Amount (CFA Francs)</div>
+  <div class="amount-big" id="amount-display">0</div>
+  <div id="balance-msg" style="display:none; font-size:12px; color:#dc2626; margin-top:6px; font-weight:500;"></div>
+  <div style="font-size:11px; color:#94a3b8; margin-top:4px;">Available: CFA 245,800</div>
+</div>
+    <div class="numpad">
+      <div class="numpad-key" onclick="numpad('1')">1</div>
+      <div class="numpad-key" onclick="numpad('2')">2</div>
+      <div class="numpad-key" onclick="numpad('3')">3</div>
+      <div class="numpad-key" onclick="numpad('4')">4</div>
+      <div class="numpad-key" onclick="numpad('5')">5</div>
+      <div class="numpad-key" onclick="numpad('6')">6</div>
+      <div class="numpad-key" onclick="numpad('7')">7</div>
+      <div class="numpad-key" onclick="numpad('8')">8</div>
+      <div class="numpad-key" onclick="numpad('9')">9</div>
+      <div class="numpad-key" onclick="numpad('000')">000</div>
+      <div class="numpad-key" onclick="numpad('0')">0</div>
+      <div class="numpad-key del" onclick="numpad('del')">&#9003;</div>
+    </div>
+    <div>
+      <div class="field-label">Reason for transfer</div>
+      <input class="input-field" type="text" id="reason-input" placeholder="e.g. Payment for goods"/>
+    </div>
+    <button class="btn btn-primary" onclick="checkFraud()" style="margin-top:auto;">Check &amp; Continue</button>
+  </div>
+</div>
+
+<!--Checking, Result, PIN, Processing & Success Screens-->
+
+<!-- ═══ SCREEN 5: CHECKING ═══ -->
+<div id="s-checking" class="screen">
+  <div class="wave-header">
+    <div class="header-row"><div class="screen-title">Verifying account</div></div>
+  </div>
+  <div class="content" style="justify-content:center; align-items:center;">
+    <div style="background:white; border-radius:16px; padding:32px 24px; text-align:center; border:1px solid #e8ecf0; width:100%;">
+      <div class="spinner"></div>
+      <div style="font-size:16px; font-weight:700; color:#1e293b; margin-bottom:8px;">Fraud check in progress</div>
+      <div style="font-size:13px; color:#64748b; line-height:1.6;">Verifying destination account<br/>against our ML fraud registry...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 6: RESULT ═══ -->
+<div id="s-result" class="screen">
+  <div class="wave-header">
+    <div class="header-row">
+      <button class="back-btn" onclick="go('s-amount')">&#8592;</button>
+      <div class="screen-title">Account status</div>
+      <div class="header-spacer"></div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="tx-card">
+      <div class="tx-row"><span class="tx-label">To</span><span class="tx-value" id="res-name">-</span></div>
+      <div class="tx-row"><span class="tx-label">Number</span><span class="tx-value" id="res-num">-</span></div>
+      <div class="tx-row"><span class="tx-label">Amount</span><span class="tx-value" id="res-amount">-</span></div>
+      <div class="tx-row"><span class="tx-label">Reason</span><span class="tx-value" id="res-reason">-</span></div>
+    </div>
+    <div class="risk-box" id="risk-box">
+      <div class="risk-icon-wrap" id="risk-icon-wrap">
+        <svg id="risk-svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"></svg>
+      </div>
+      <div class="risk-title" id="risk-title"></div>
+      <div class="risk-desc"  id="risk-desc"></div>
+      <div class="risk-badge" id="risk-badge"></div>
+      <div style="margin-top:12px;">
+        <div style="display:flex; justify-content:space-between; font-size:11px; color:#94a3b8; margin-bottom:4px;">
+          <span>Model confidence</span><span id="conf-pct"></span>
+        </div>
+        <div class="conf-bar-wrap"><div class="conf-bar" id="conf-bar"></div></div>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px; margin-top:auto;">
+      <button class="btn" id="btn-continue-result" onclick="proceedToPin()">Continue with transfer</button>
+      <button class="btn btn-ghost" onclick="go('s-home')">Cancel transfer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 7: PIN ═══ -->
+<div id="s-pin" class="screen">
+  <div class="wave-header">
+    <div class="header-row">
+      <button class="back-btn" onclick="go('s-result')">&#8592;</button>
+      <div class="screen-title">Enter secret PIN</div>
+      <div class="header-spacer"></div>
+    </div>
+  </div>
+  <div class="content content-white" style="align-items:center;">
+    <div style="text-align:center; margin-top:10px;">
+      <div style="font-size:14px; color:#64748b;">Sending</div>
+      <div style="font-size:28px; font-weight:800; color:#1e293b; margin:4px 0;" id="pin-amount">CFA 0</div>
+      <div style="font-size:13px; color:#64748b;">to <span id="pin-name" style="color:#1e293b; font-weight:700;"></span></div>
+    </div>
+    <div class="pin-dots">
+      <div class="pin-dot" id="d0"></div>
+      <div class="pin-dot" id="d1"></div>
+      <div class="pin-dot" id="d2"></div>
+      <div class="pin-dot" id="d3"></div>
+    </div>
+    <div style="font-size:12px; color:#94a3b8; margin-bottom:12px;">Enter your 4-digit secret PIN</div>
+    <div class="numpad" style="width:100%;">
+      <div class="numpad-key" onclick="pinpad('1')">1</div>
+      <div class="numpad-key" onclick="pinpad('2')">2</div>
+      <div class="numpad-key" onclick="pinpad('3')">3</div>
+      <div class="numpad-key" onclick="pinpad('4')">4</div>
+      <div class="numpad-key" onclick="pinpad('5')">5</div>
+      <div class="numpad-key" onclick="pinpad('6')">6</div>
+      <div class="numpad-key" onclick="pinpad('7')">7</div>
+      <div class="numpad-key" onclick="pinpad('8')">8</div>
+      <div class="numpad-key" onclick="pinpad('9')">9</div>
+      <div class="numpad-key" style="background:#f8fafc; cursor:default;"></div>
+      <div class="numpad-key" onclick="pinpad('0')">0</div>
+      <div class="numpad-key del" onclick="pinpad('del')">&#9003;</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 8: PROCESSING ═══ -->
+<div id="s-processing" class="screen">
+  <div class="wave-header">
+    <div class="header-row"><div class="screen-title">Processing transfer</div></div>
+  </div>
+  <div class="content" style="justify-content:center; align-items:center;">
+    <div style="background:white; border-radius:16px; padding:32px 24px; text-align:center; border:1px solid #e8ecf0; width:100%;">
+      <div class="spinner"></div>
+      <div style="font-size:16px; font-weight:700; color:#1e293b; margin-bottom:8px;">Processing...</div>
+      <div style="font-size:13px; color:#64748b;">Please do not close this screen</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 9: SUCCESS ═══ -->
+<div id="s-success" class="screen">
+  <div class="wave-header">
+    <div class="header-row"><div class="screen-title">Transfer complete</div></div>
+  </div>
+  <div class="content" style="align-items:center; text-align:center;">
+    <div class="success-circle">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+    </div>
+    <div style="font-size:20px; font-weight:800; color:#1e293b;">Transfer successful!</div>
+    <div style="font-size:13px; color:#64748b; margin-top:6px;" id="suc-msg"></div>
+    <div class="tx-card" style="width:100%; margin-top:16px;">
+      <div class="tx-row"><span class="tx-label">To</span><span class="tx-value" id="suc-name">-</span></div>
+      <div class="tx-row"><span class="tx-label">Amount</span><span class="tx-value" id="suc-amount">-</span></div>
+      <div class="tx-row"><span class="tx-label">Reference</span><span class="tx-value" id="suc-ref">-</span></div>
+      <div class="tx-row"><span class="tx-label">Date &amp; time</span><span class="tx-value" id="suc-date">-</span></div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px; width:100%; margin-top:auto;">
+      <button class="btn btn-primary" onclick="go('s-home')">Back to home</button>
+      <button class="btn btn-ghost">Download receipt</button>
+    </div>
+  </div>
+</div>
+
+</div><!-- end .phone -->
+
+<!--JavaSCript-->
+<script>
+// ── App State ──────────────────────────────────────────────────────────────
+// This object holds all the data that flows through the transaction
+var state = {
+  destName: '',    // contact name
+  destNum:  '',    // destination phone number
+  amount:   '0',  // amount as string (to handle leading zeros from numpad)
+  reason:   '',    // reason for transfer
+};
+var pinBuffer = ''; // stores PIN digits as user types
+
+// API base URL — points to our Flask server
+var API_BASE = 'http://localhost:5000';
+
+// ── Screen Navigation ─────────────────────────────────────────────────────
+// Hides all screens, then shows the one with the given id
+function go(id) {
+  document.querySelectorAll('.screen').forEach(function(s) {
+    s.classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+// ── Contact Selection ─────────────────────────────────────────────────────
+// Called when user types in the number field
+function syncNumber(val) {
+  // Strip everything except digits
+  var digitsOnly = val.replace(/\D/g, '');
+
+  // Senegalese numbers with country code = 12 digits (221XXXXXXXXX)
+  // Without country code = 9 digits (7XXXXXXXX)
+  // We cap at 12 digits maximum
+  if (digitsOnly.length > 12) {
+    digitsOnly = digitsOnly.slice(0, 12);
+    // Update the input field to show the capped value
+    document.getElementById('manual-number').value = digitsOnly;
+  }
+
+  state.destNum  = digitsOnly;
+  state.destName = '';
+
+  // Show validation feedback
+  var input = document.getElementById('manual-number');
+  if (digitsOnly.length > 0 && digitsOnly.length < 9) {
+    input.style.borderColor = '#dc2626'; // red — too short
+  } else if (digitsOnly.length >= 9) {
+    input.style.borderColor = '#16a34a'; // green — valid length
+  } else {
+    input.style.borderColor = '#e2e8f0'; // default
+  }
+}
+
+// Called when user taps a contact row
+function selectContact(name, num) {
+  state.destName = name;
+  state.destNum  = num;
+  // Format the number nicely in the input field
+  document.getElementById('manual-number').value =
+    '+' + num.replace(/(\d{3})(\d{2})(\d{3})(\d{4})/, '$1 $2 $3 $4');
+}
+
+// Called when user taps Continue on contacts screen
+function proceedFromContacts() {
+  if (!state.destNum) {
+    alert('Please enter or select a destination number.');
+    return;
+  }
+  // Must be 9 digits (local) or 12 digits (with country code)
+  if (state.destNum.length < 9 || state.destNum.length > 12) {
+    alert('Please enter a valid phone number (9 to 12 digits).');
+    document.getElementById('manual-number').style.borderColor = '#dc2626';
+    return;
+  }
+  // Must be all digits — no letters
+  if (!/^\d+$/.test(state.destNum)) {
+    alert('Phone number must contain digits only.');
+    document.getElementById('manual-number').style.borderColor = '#dc2626';
+    return;
+  }
+  // Build initials for the avatar
+  var initials = state.destName
+    ? state.destName.split(' ').map(function(w) { return w[0]; }).join('').toUpperCase()
+    : state.destNum.slice(-4);
+
+  document.getElementById('amt-avatar').textContent = initials;
+  document.getElementById('amt-name').textContent   = state.destName || 'Unknown';
+  document.getElementById('amt-num').textContent    = '+' + state.destNum;
+  state.amount = '0';
+  document.getElementById('amount-display').textContent = '0';
+  go('s-amount');
+}
+
+// ── Numpad Logic ──────────────────────────────────────────────────────────
+var AVAILABLE_BALANCE = 245800; // CFA — matches what's shown on home screen
+
+function numpad(key) {
+  var cur = state.amount;
+  if (key === 'del') {
+    cur = cur.length > 1 ? cur.slice(0, -1) : '0';
+  } else if (key === '000') {
+    cur = cur === '0' ? '0' : cur + '000';
+  } else {
+    cur = cur === '0' ? key : cur + key;
+  }
+
+  var amountDisplay = document.getElementById('amount-display');
+  var balanceMsg    = document.getElementById('balance-msg');
+
+  // Cap at 9,999,999
+  if (parseInt(cur) > 9999999) return;
+
+  state.amount = cur;
+  amountDisplay.textContent = parseInt(cur).toLocaleString();
+
+  // Check against available balance
+  if (parseInt(cur) > AVAILABLE_BALANCE) {
+    amountDisplay.style.color = '#dc2626'; // turn amount red
+    balanceMsg.textContent    = '⚠ Amount exceeds your balance of CFA ' + AVAILABLE_BALANCE.toLocaleString();
+    balanceMsg.style.display  = 'block';
+  } else {
+    amountDisplay.style.color = '#1e293b'; // back to normal
+    balanceMsg.style.display  = 'none';
+  }
+}
+
+// ── Fraud Check ───────────────────────────────────────────────────────────
+// This is the core function — it calls the Flask API
+function checkFraud() {
+  if (!state.amount || parseInt(state.amount) < 1) {
+    alert('Please enter an amount greater than 0.');
+    return;
+  }
+  if (parseInt(state.amount) > AVAILABLE_BALANCE) {
+    alert('Amount exceeds your available balance of CFA ' + AVAILABLE_BALANCE.toLocaleString());
+    return;
+  }
+  state.reason = document.getElementById('reason-input').value || 'Not specified';
+  go('s-checking');
+
+  // Call our Risk Status API
+  fetch(API_BASE + '/api/v1/risk-status/' + state.destNum)
+    .then(function(response) { return response.json(); })
+    .then(function(data) {
+      // API responded — show the result
+      showResult(data);
+    })
+    .catch(function() {
+      // API not reachable — use fallback test data so demo still works
+      var fallback = {
+  '221700083929': { status:'LOW_RISK',  confidence_score:0.06, flag_reason:'No fraudulent activity detected for this account.', account_stats:{ victim_count:1, total_amount:18000, device_count:1 } },
+  '221701064176': { status:'LOW_RISK',  confidence_score:0.04, flag_reason:'No fraudulent activity detected for this account.', account_stats:{ victim_count:1, total_amount:12000, device_count:1 } },
+  '221700028225': { status:'HIGH_RISK', confidence_score:0.97, flag_reason:'Account linked to multiple victims with large total fraudulent transfers detected.', account_stats:{ victim_count:4, total_amount:620000, device_count:5 } },
+  '221701000643': { status:'HIGH_RISK', confidence_score:0.94, flag_reason:'Account flagged for repeated fraudulent activity across multiple victims.', account_stats:{ victim_count:3, total_amount:480000, device_count:4 } },
+};
+      var num   = state.destNum;
+      var found = null;
+      for (var k in fallback) {
+        if (num.endsWith(k) || k.endsWith(num) || num === k) { found = fallback[k]; break; }
+      }
+      if (!found) {
+        found = { status:'LOW_RISK', confidence_score:0.03, flag_reason:'Phone number not in fraud registry.', account_stats:{ victim_count:0, total_amount:0, device_count:0 } };
+      }
+      showResult(found);
+    });
+}
+
+// ── Show Risk Result ──────────────────────────────────────────────────────
+function showResult(data) {
+  // Fill transaction summary
+  document.getElementById('res-name').textContent   = state.destName || 'Unknown';
+  document.getElementById('res-num').textContent    = '+' + state.destNum;
+  document.getElementById('res-amount').textContent = 'CFA ' + parseInt(state.amount).toLocaleString();
+  document.getElementById('res-reason').textContent = state.reason;
+
+  var isHigh = data.status === 'HIGH_RISK';
+  var pct    = Math.round((data.confidence_score || 0) * 100);
+
+  // Get all the elements we need to update
+  var box   = document.getElementById('risk-box');
+  var wrap  = document.getElementById('risk-icon-wrap');
+  var svg   = document.getElementById('risk-svg');
+  var title = document.getElementById('risk-title');
+  var desc  = document.getElementById('risk-desc');
+  var badge = document.getElementById('risk-badge');
+  var bar   = document.getElementById('conf-bar');
+  var cpct  = document.getElementById('conf-pct');
+  var btn   = document.getElementById('btn-continue-result');
+
+  if (isHigh) {
+    box.className   = 'risk-box high';
+    wrap.className  = 'risk-icon-wrap high';
+    svg.setAttribute('stroke', '#991b1b');
+    svg.innerHTML   = '<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>';
+    title.textContent = 'High risk account detected';
+    title.className   = 'risk-title high';
+    desc.textContent  = data.flag_reason;
+    badge.textContent = 'HIGH RISK';
+    badge.className   = 'risk-badge high';
+    bar.style.background = '#dc2626';
+    btn.className  = 'btn btn-danger';
+    btn.textContent = 'Proceed anyway (not recommended)';
+  } else {
+    box.className   = 'risk-box low';
+    wrap.className  = 'risk-icon-wrap low';
+    svg.setAttribute('stroke', '#15803d');
+    svg.innerHTML   = '<path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>';
+    title.textContent = 'Account looks safe';
+    title.className   = 'risk-title low';
+    desc.textContent  = data.flag_reason;
+    badge.textContent = 'LOW RISK';
+    badge.className   = 'risk-badge low';
+    bar.style.background = '#16a34a';
+    btn.className  = 'btn btn-primary';
+    btn.textContent = 'Continue with transfer';
+  }
+
+  bar.style.width  = pct + '%';
+  cpct.textContent = pct + '%';
+  go('s-result');
+}
+
+// ── PIN Screen ────────────────────────────────────────────────────────────
+function proceedToPin() {
+  document.getElementById('pin-amount').textContent = 'CFA ' + parseInt(state.amount).toLocaleString();
+  document.getElementById('pin-name').textContent   = state.destName || state.destNum;
+  pinBuffer = '';
+  updateDots();
+  go('s-pin');
+}
+
+function pinpad(key) {
+  if (key === 'del') {
+    pinBuffer = pinBuffer.slice(0, -1);
+  } else if (pinBuffer.length < 4) {
+    pinBuffer += key;
+  }
+  updateDots();
+  // Once all 4 digits are entered, proceed automatically
+  if (pinBuffer.length === 4) {
+    setTimeout(function() {
+      go('s-processing');
+      setTimeout(showSuccess, 2000);
+    }, 300);
+  }
+}
+
+function updateDots() {
+  for (var i = 0; i < 4; i++) {
+    document.getElementById('d' + i).className = 'pin-dot' + (i < pinBuffer.length ? ' filled' : '');
+  }
+}
+
+// ── Success Screen ────────────────────────────────────────────────────────
+function showSuccess() {
+  var ref  = 'WV' + Date.now().toString().slice(-8).toUpperCase();
+  var now  = new Date();
+  var date = now.toLocaleDateString('en-GB', { day:'2-digit', month:'short', year:'numeric' })
+           + ' · '
+           + now.toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit' });
+
+  document.getElementById('suc-name').textContent   = state.destName || state.destNum;
+  document.getElementById('suc-amount').textContent = 'CFA ' + parseInt(state.amount).toLocaleString();
+  document.getElementById('suc-ref').textContent    = ref;
+  document.getElementById('suc-date').textContent   = date;
+  document.getElementById('suc-msg').textContent    = 'CFA ' + parseInt(state.amount).toLocaleString() + ' sent to ' + (state.destName || state.destNum);
+  go('s-success');
+}
+</script>
+</body>
+</html>
+
+
+
+
