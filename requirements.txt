@@ -5,7 +5,8 @@ matplotlib
 seaborn
 openpyxl
 flask
+gunicorn
 flask-cors
 joblib
 jupyter
-gunicorn
+
