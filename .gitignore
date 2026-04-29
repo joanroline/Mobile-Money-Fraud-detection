@@ -6,10 +6,10 @@ __pycache__/
 venv/
 env/
 .venv/
-models/*.pkl
+#models/*.pkl
 .ipynb_checkpoints/
 .DS_Store
 *.swp
-models/*.pkl
-models/*.pkl
-models/*.pkl
+#models/*.pkl
+#models/*.pkl
+#models/*.pkl
