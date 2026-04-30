@@ -512,7 +512,7 @@ var state = {
 var pinBuffer = ''; // stores PIN digits as user types
 
 // API base URL — points to our Flask server
-var API_BASE = 'https://wave-fraud-detection-api.onrender.com';
+var API_BASE = 'http://localhost:5000';
 
 // ── Screen Navigation ─────────────────────────────────────────────────────
 // Hides all screens, then shows the one with the given id
@@ -648,9 +648,9 @@ function checkFraud() {
     })
     .catch(function() {
       // API not reachable — use fallback test data so demo still works
-      var fallback = {
-  '221700083929': { status:'LOW_RISK',  confidence_score:0.06, flag_reason:'No fraudulent activity detected for this account.', account_stats:{ victim_count:1, total_amount:18000, device_count:1 } },
-  '221701064176': { status:'LOW_RISK',  confidence_score:0.04, flag_reason:'No fraudulent activity detected for this account.', account_stats:{ victim_count:1, total_amount:12000, device_count:1 } },
+   var fallback = {
+  '221700083929': { status:'LOW_RISK',  confidence_score:1.0, flag_reason:'No fraudulent activity detected for this account.', account_stats:{ victim_count:1, total_amount:18000, device_count:1 } },
+  '221701064176': { status:'LOW_RISK',  confidence_score:1.0, flag_reason:'No fraudulent activity detected for this account.', account_stats:{ victim_count:1, total_amount:12000, device_count:1 } },
   '221700028225': { status:'HIGH_RISK', confidence_score:0.97, flag_reason:'Account linked to multiple victims with large total fraudulent transfers detected.', account_stats:{ victim_count:4, total_amount:620000, device_count:5 } },
   '221701000643': { status:'HIGH_RISK', confidence_score:0.94, flag_reason:'Account flagged for repeated fraudulent activity across multiple victims.', account_stats:{ victim_count:3, total_amount:480000, device_count:4 } },
 };
@@ -669,13 +669,20 @@ function checkFraud() {
 // ── Show Risk Result ──────────────────────────────────────────────────────
 function showResult(data) {
   // Fill transaction summary
-  document.getElementById('res-name').textContent   = state.destName || 'Unknown';
+  // Use name from API if available, otherwise use contact name or Unknown
+var displayName = data.account_name && data.account_name !== 'Unknown' 
+    ? data.account_name 
+    : (state.destName || 'Unknown');
+document.getElementById('res-name').textContent = displayName;
+state.destName = displayName; // update state so PIN screen also shows it
   document.getElementById('res-num').textContent    = '+' + state.destNum;
   document.getElementById('res-amount').textContent = 'CFA ' + parseInt(state.amount).toLocaleString();
   document.getElementById('res-reason').textContent = state.reason;
 
   var isHigh = data.status === 'HIGH_RISK';
-  var pct    = Math.round((data.confidence_score || 0) * 100);
+  var pct = Math.round((data.confidence_score || 0) * 100);
+console.log('Confidence score from API:', data.confidence_score);
+console.log('Calculated pct:', pct);
 
   // Get all the elements we need to update
   var box   = document.getElementById('risk-box');

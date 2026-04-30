@@ -56,12 +56,9 @@ def lookup_account(phone_number):
 # Build Response function
 def build_response(account, phone_number):
     is_high_risk  = account['risk_status'] == 'HIGH_RISK'
-    raw_score     = round(float(account['confidence_score']), 4)
-
-    # For HIGH RISK: confidence = probability of being HIGH RISK (e.g. 0.96 = 96% sure it's fraud)
-    # For LOW RISK:  confidence = probability of being SAFE (1 - fraud probability)
-    # This way both always read as "how confident are we in this classification"
-    confidence = raw_score if is_high_risk else round(1.0 - raw_score, 4)
+    # Registry already stores correct confidence scores
+    # HIGH RISK = probability of fraud, LOW RISK = probability of being safe
+    confidence = round(float(account['confidence_score']), 4)
     victim_count  = int(account['victim_count'])
     total_amount  = int(account['total_amount'])
     device_count  = int(account['device_count'])
@@ -79,6 +76,7 @@ def build_response(account, phone_number):
 
     return {
         "phone_number":       phone_number,
+        "account_name":       str(account.get('dest_name', 'Unknown')),
         "status":             account['risk_status'],     # HIGH_RISK or LOW_RISK
         "confidence_score":   confidence,                 # 0.0 to 1.0
         "flag_reason":        flag_reason,                # human-readable explanation
@@ -141,6 +139,7 @@ def risk_status(phone_number):
           # A number never seen in fraud records is very likely safe
         response = {
             "phone_number":       phone_number,
+            "account_name":       "Unknown",
             "status":             "LOW_RISK",
             "confidence_score":   0.95,
             "flag_reason":        "Phone number has no history of fraudulent activity.",
