@@ -186,14 +186,14 @@ if __name__ == '__main__':
     print("\n Wave Fraud Detection API")
     print(" Running at: http://localhost:5000")
     print(" Test URL:   http://localhost:5000/api/v1/risk-status/221771234001\n")
-    #app.run(debug=True, host='0.0.0', port=5000)
+    app.run(debug=True, host='0.0.0', port=5000)
     #interface.launch(server_name="0.0.0.0", server_port=7860)
 
-    port = int(os.environ.get('PORT', 5000))
-import os
+    #port = int(os.environ.get('PORT', 5000))
+#import os
 
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(debug=False, host="0.0.0.0", port=port)
+#if __name__ == "__main__":
+ #   port = int(os.environ.get("PORT", 5000))
+  #  app.run(debug=False, host="0.0.0.0", port=port)
 
     
